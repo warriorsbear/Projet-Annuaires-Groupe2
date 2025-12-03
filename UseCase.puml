@@ -1,0 +1,51 @@
+@startuml UseCaseDiagram
+
+left to right direction
+
+actor "Administrateur du Serveur" as Admin
+actor "Utilisateur" as User
+
+rectangle "Système de Gestion d'Annuaires" {
+    usecase UC_ConnecterDeco as "Se Connecter/Se déconnecter"
+
+    usecase UC_CreerCompte as "Créer un Compte Utilisateur"
+    usecase UC_SupprimerCompte as "Supprimer un Compte Utilisateur"
+    usecase UC_ModifierCompte as "Modifier un Compte Utilisateur"
+    usecase UC_ListerComptes as "Lister les Comptes Utilisateurs"
+
+    usecase UC_AjouterContact as "Ajouter un Contact"
+    usecase UC_SupprimerContact as "Supprimer un Contact"
+    usecase UC_ModifierContact as "Modifier un Contact"
+    usecase UC_ExporterAnnuaire as "Exporter Annuaire (CSV)"
+    usecase UC_ImporterAnnuaire as "Importer Annuaire (CSV)"
+    usecase UC_GererAnnuaire as "Gérer son Annuaire"
+
+    usecase UC_DonnerPermission as "Donner Permission d'Accès"
+    usecase UC_RevoquerPermission as "Révoquer Permission d'Accès"
+    usecase UC_ConsulterAnnuairePartage as "Consulter Annuaire Partagé"
+}
+
+Admin --|> User
+User -- UC_ConnecterDeco
+
+Admin --> UC_CreerCompte
+Admin --> UC_SupprimerCompte
+Admin --> UC_ModifierCompte
+Admin --> UC_ListerComptes
+
+UC_GererAnnuaire ..> UC_AjouterContact : <<include>>
+UC_GererAnnuaire ..> UC_SupprimerContact : <<include>>
+UC_GererAnnuaire ..> UC_ModifierContact : <<include>>
+UC_GererAnnuaire ..> UC_ExporterAnnuaire : <<include>>
+UC_GererAnnuaire ..> UC_ImporterAnnuaire : <<include>>
+
+User -- UC_GererAnnuaire
+User -- UC_DonnerPermission
+User -- UC_RevoquerPermission
+User -- UC_ConsulterAnnuairePartage
+
+UC_GererAnnuaire .> UC_ConnecterDeco: <<include>>
+UC_DonnerPermission .> UC_ConnecterDeco: <<include>>
+UC_RevoquerPermission .> UC_ConnecterDeco: <<include>>
+UC_ConsulterAnnuairePartage .> UC_ConnecterDeco: <<include>>
+@enduml

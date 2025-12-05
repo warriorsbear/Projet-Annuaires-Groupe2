@@ -1,0 +1,49 @@
+@startuml SequenceDiagram_Auth_AjoutContact_CSV
+
+title Diagramme de Séquence Unifié : Auth (CSV) & Ajout de Contact
+
+actor "Client" as C
+participant "Serveur" as S
+database "Fichiers CSV (Utilisateurs/Contacts)" as CSV
+
+autonumber
+
+C -> S : connecter_serveur() // Tente d'établir la connexion
+S --> C : Connexion établie
+
+== 1. Tentative d'Authentification (AUTH_CONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_CONNEXION, Contenu: {Login, MotDePasse}) 
+S -> CSV : Lire_Utilisateur_MDP(Login) // Vérification des informations de connexion
+
+alt Succès de l'authentification (Identifiants valides)
+    CSV --> S : Données Utilisateur (Rôle, ID)
+    S -> S : Générer_Jeton(ID) [cite: 199]
+    S -> S : Stocker_Jeton_Session(ID) [cite: 204]
+    S --> C : recevoir_PDU(STATUT: 204 AUTHENTIFICATION_REUSSIE, Auth: {TokenSession, Rôle})
+
+    == 2. Opération : Ajout de Contact (AJOUTER_CONTACT) ==
+    C -> S : envoyer_PDU(ACTION: AJOUTER_CONTACT, Auth: {TokenSession}, Contenu: {DonnéesContact}) 
+    S -> S : Valider_Token(TokenSession) [cite: 215]
+    S -> S : Vérifier_Formats(DonnéesContact) // Validation des données (Nom, Email, etc.) 
+
+    alt Succès de l'ajout
+        S -> CSV : Écrire_Contact(Annuaire_CSV, DonnéesContact) // Ajout du contact dans l'annuaire 
+        S --> C : recevoir_PDU(STATUT: 201 RESSOURCE_CREEE) 
+    else Échec de l'ajout (ex: Conflit de données)
+        CSV --> S : Contact déjà existant
+        S --> C : recevoir_PDU(STATUT: 406 CONFLIT_DONNEES) 
+    else Échec de la validation
+        S --> C : recevoir_PDU(STATUT: 408 FORMAT_INVALIDE) 
+    end
+
+else Échec de l'authentification (Identifiants invalides)
+    CSV --> S : Identifiants incorrects
+    S --> C : recevoir_PDU(STATUT: 401 AUTHENTIFICATION_ECHOUEE) 
+end
+
+== 3. Fin de Session (AUTH_DECONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_DECONNEXION, Auth: {TokenSession}) 
+S -> S : Invalider_Jeton(TokenSession) 
+S --> C : recevoir_PDU(STATUT: 205 DECONNEXION_REUSSIE) 
+
+@enduml

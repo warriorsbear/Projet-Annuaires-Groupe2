@@ -1,0 +1,45 @@
+@startuml SequenceDiagram_Auth_Permisssions_CSV
+
+title Diagramme de Séquence : Auth, CSV & Gestion des Permissions
+
+actor "Utilisateur" as UA
+participant Client as C
+participant Serveur as S
+database "Fichiers CSV (Utilisateurs/Permissions)" as CSV
+
+autonumber
+
+C -> S : connecter_serveur() 
+S --> C : Connexion établie
+
+== 1. Tentative d'Authentification (AUTH_CONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_CONNEXION, Contenu: {Login, MotDePasse})
+S -> CSV : Lire_Utilisateur_MDP(Login)
+
+alt Succès de l'authentification (Mots de passe correspondent)
+    CSV --> S : Données Utilisateur (Rôle, ID)
+    S -> S : Générer_Jeton(ID)
+    S -> S : Stocker_Jeton_Session(ID)
+    S --> C : recevoir_PDU(STATUT: 204 AUCUN_CONTENU, Authentification: {TokenSession}) [cite: 205, 216, 223]
+
+    == 2. Opération : Autorisation d'Accès (ACCORDER_PERMISSION) ==
+    C -> S : envoyer_PDU(ACTION: ACCORDER_PERMISSION, Auth: {TokenSession}, Contenu: {UserCible}) [cite: 214, 306]
+    S -> S : Valider_Token(TokenSession)
+    S -> CSV : Vérifier_Existence_Propriété(UserCible, UserA)
+    
+    alt Succès de la modification
+        CSV --> S : Confirmation de l'existence et propriété
+        S -> CSV : Écrire_Permission(AnnuaireA, UserCible)
+        S --> C : recevoir_PDU(STATUT: 206 PERMISSION_ACCORDEE) [cite: 206, 393]
+    else Erreur : Utilisateur cible inexistant
+        CSV --> S : Utilisateur inexistant
+        S --> C : recevoir_PDU(STATUT: 404 RESSOURCE_INEXISTANTE) 
+    end
+end
+
+== 3. Fin de Session (AUTH_DECONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_DECONNEXION, Auth: {TokenSession}) [cite: 224]
+S -> S : Invalider_Jeton(TokenSession)
+S --> C : recevoir_PDU(STATUT: 205 DECONNEXION_REUSSIE) 
+
+@enduml

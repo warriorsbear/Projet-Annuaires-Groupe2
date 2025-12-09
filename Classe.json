@@ -1,0 +1,126 @@
+[
+    {
+        "Class": "Utilisateur",
+        "Description": "Classe représentant un utilisateur et ses opérations métier (pas de logique réseau).",
+        "Attributs": [
+            "username : string",
+            "email : string",
+            "password_hash : string",
+            "annuaire_path : string",
+            "permissions_accordees : list",
+            "permissions_recues : list"
+        ],
+        "Methodes": [
+            { "Name": "verifier_mot_de_passe", "Params": ["hash_client"] },
+            { "Name": "charger_annuaire", "Params": [] },
+            { "Name": "ajouter_contact", "Params": ["contact"] },
+            { "Name": "supprimer_contact", "Params": ["id_contact"] },
+            { "Name": "modifier_contact", "Params": ["id_contact", "champs"] },
+            { "Name": "rechercher_contact", "Params": ["criteres"] },
+            { "Name": "lister_contacts", "Params": [] },
+            { "Name": "accorder_permission", "Params": ["utilisateur"] },
+            { "Name": "retirer_permission", "Params": ["utilisateur"] },
+            { "Name": "exporter_csv", "Params": [] },
+            { "Name": "importer_csv", "Params": ["fichier"] }
+        ]
+    },
+    {
+        "Class": "Administrateur",
+        "Description": "Hérite de Utilisateur. Privilèges déterminés par le rôle, pas d'attributs supplémentaires.",
+        "Attributs": [],
+        "Methodes": [
+            { "Name": "creer_utilisateur", "Params": ["username", "mot_de_passe"] },
+            { "Name": "supprimer_utilisateur", "Params": ["username"] },
+            { "Name": "modifier_utilisateur", "Params": ["username", "nouveaux_champs"] },
+            { "Name": "lister_utilisateurs", "Params": [] }
+        ]
+    },
+    {
+        "Class": "Contact",
+        "Description": "Représente un contact dans l'annuaire.",
+        "Attributs": [
+            "id_contact : Int",
+            "nom : string",
+            "prenom : string",
+            "email : string",
+            "telephone : string",
+            "adresse : string"
+        ],
+        "Methodes": [
+            { "Name": "valider", "Params": [] },
+            { "Name": "mettre_a_jour", "Params": ["champs"] },
+            { "Name": "to_dict", "Params": [] },
+            { "Name": "from_dict", "Params": ["donnees"] }
+        ]
+    },
+    {
+        "Class": "Annuaire",
+        "Description": "Contient la liste des contacts et gère les opérations d'annuaire.",
+        "Attributs": [
+            "proprietaire : Utilisateur",
+            "contacts : list[Contact]",
+            "fichier_csv : string"
+        ],
+        "Methodes": [
+            { "Name": "charger", "Params": [] },
+            { "Name": "sauvegarder", "Params": [] },
+            { "Name": "ajouter", "Params": ["contact"] },
+            { "Name": "supprimer", "Params": ["id_contact"] },
+            { "Name": "rechercher", "Params": ["criteres"] },
+            { "Name": "lister", "Params": [] },
+            { "Name": "importer_csv", "Params": ["fichier"] },
+            { "Name": "exporter_csv", "Params": [] }
+        ]
+    },
+    {
+        "Class": "Session",
+        "Description": "Représente une session utilisateur (token et validité).",
+        "Attributs": [
+            "utilisateur : Utilisateur",
+            "token : string",
+            "timestamp_creation : datetime",
+            "timestamp_expiration : datetime"
+        ],
+        "Methodes": [
+            { "Name": "est_valide", "Params": [] },
+            { "Name": "renouveler", "Params": [] },
+            { "Name": "invalider", "Params": [] }
+        ]
+    },
+    {
+        "Class": "PDU",
+        "Description": "Format de message utilisé pour les échanges (PDU).",
+        "Attributs": [
+            "version : string",
+            "msg_id : string",
+            "type : string",
+            "action : string",
+            "timestamp : datetime",
+            "auth : string",
+            "payload : dict",
+            "status : list"
+        ],
+        "Methodes": [
+            { "Name": "valider_structure", "Params": [] },
+            { "Name": "to_json", "Params": [] },
+            { "Name": "from_json", "Params": ["texte"] }
+        ]
+    },
+    {
+        "Class": "Serveur",
+        "Description": "Gère les sessions et le traitement des requêtes côté serveur (modélisation métier).",
+        "Attributs": [
+            "sessions_actives : list[Session]",
+            "utilisateurs : list[Utilisateur]",
+            "fichiers_csv : list[string]"
+        ],
+        "Methodes": [
+            { "Name": "authentifier", "Params": [] },
+            { "Name": "creer_session", "Params": [] },
+            { "Name": "invalider_session", "Params": [] },
+            { "Name": "traiter_requete", "Params": ["pdu"] },
+            { "Name": "charger_donnees", "Params": [] },
+            { "Name": "sauvegarder_donnees", "Params": [] }
+        ]
+    }
+]

@@ -1,0 +1,76 @@
+@startuml SequenceDiagram_Global_RFC
+
+title Diagramme de Séquence GLOBAL : Opérations Principales (Auth, CRUD & Permissions)
+
+actor "Client (User/Admin)" as C
+participant "Serveur" as S
+database "Fichiers CSV (Data Store)" as CSV
+
+autonumber
+
+C -> S : connecter_serveur()
+S --> C : Connexion établie
+
+== 1. Authentification (AUTH_CONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_CONNEXION, Contenu: {Login, MotDePasse})
+S -> CSV : Lire_Utilisateur_MDP(Login)
+
+alt Authentification réussie
+    CSV --> S : Données Utilisateur (ID, Rôle)
+    S -> S : Générer_Jeton(ID)
+    S --> C : recevoir_PDU(STATUT: 204 AUTHENTIFICATION_REUSSIE, Auth: {TokenSession, Rôle})
+
+    group Choix de l'opération fonctionnelle (Utilisateur ou Admin)
+        
+        alt 2a. Opération Utilisateur : AJOUTER_CONTACT
+            C -> S : envoyer_PDU(ACTION: AJOUTER_CONTACT, Auth: {TokenSession}, Contenu: {DonnéesContact})
+            S -> S : Valider_Token()
+            S -> CSV : Écrire_Contact(Annuaire_CSV, DonnéesContact)
+            S --> C : recevoir_PDU(STATUT: 201 RESSOURCE_CREEE)
+        
+        else 2b. Opération Utilisateur : ACCORDER_PERMISSION
+            C -> S : envoyer_PDU(ACTION: ACCORDER_PERMISSION, Auth: {TokenSession}, Contenu: {UserCible})
+            S -> S : Valider_Token()
+            S -> CSV : Vérifier_Propriété_et_Existence(UserCible)
+            S -> CSV : Écrire_Permission(AnnuaireA, UserCible)
+            S --> C : recevoir_PDU(STATUT: 206 PERMISSION_ACCORDEE)
+            
+        else 2c. Opération Utilisateur : VOIR_ANNUAIRE (Tiers)
+            C -> S : envoyer_PDU(ACTION: VOIR_ANNUAIRE, Auth: {TokenSession}, Contenu: {UtilisateurCible})
+            S -> S : Valider_Token()
+            S -> CSV : Vérifier_Permission_Accès(UserA, UserB)
+            alt Permission accordée
+                S -> CSV : Lire_Annuaire(Annuaire_B)
+                S --> C : recevoir_PDU(STATUT: 200 REQUETE_OK, Contenu: {ListeContacts})
+            else Permission refusée
+                S --> C : recevoir_PDU(STATUT: 403 ACCES_REFUSE)
+            end
+
+        else 2d. Opération Administrateur : CREER_COMPTE
+            C -> S : envoyer_PDU(ACTION: CREER_COMPTE, Auth: {TokenSession}, Contenu: {NouveauLogin, NouveauMDP})
+            S -> S : Vérifier_Rôle_Admin()
+            S -> CSV : Vérifier_Existence_Login(NouveauLogin)
+            alt Rôle Admin & Login disponible
+                S -> CSV : Écrire_Nouvel_Utilisateur()
+                S -> CSV : Créer_Fichier_Annuaire()
+                S --> C : recevoir_PDU(STATUT: 201 RESSOURCE_CREEE)
+            else Rôle non Admin
+                S --> C : recevoir_PDU(STATUT: 403 ACCES_REFUSE)
+            end
+            
+        end
+        
+    end
+    
+    == 3. Déconnexion (AUTH_DECONNEXION) ==
+    C -> S : envoyer_PDU(ACTION: AUTH_DECONNEXION, Auth: {TokenSession})
+    S -> S : Invalider_Jeton(TokenSession)
+    S --> C : recevoir_PDU(STATUT: 205 DECONNEXION_REUSSIE)
+
+else Échec de l'authentification
+    CSV --> S : Identifiants incorrects
+    S --> C : recevoir_PDU(STATUT: 401 AUTHENTIFICATION_ECHOUEE)
+    
+end
+
+@enduml

@@ -1,0 +1,47 @@
+@startuml SequenceDiagram_Auth_ConsultationTiers_CSV
+
+title Diagramme de Séquence Unifié : Auth (CSV) & Consultation Annuaire Tiers
+
+actor "Utilisateur A (Client)" as C
+participant "Serveur" as S
+database "Fichiers CSV (Utilisateurs/Permissions/Annuaire B)" as CSV
+
+autonumber
+
+C -> S : connecter_serveur() // Tente d'établir la connexion
+S --> C : Connexion établie
+
+== 1. Tentative d'Authentification (AUTH_CONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_CONNEXION, Contenu: {Login_A, MotDePasse})
+S -> CSV : Lire_Utilisateur_MDP(Login_A) // Vérification des identifiants
+
+alt Succès de l'authentification (Identifiants valides)
+    CSV --> S : Données Utilisateur A
+    S -> S : Générer_Jeton(ID_A)
+    S -> S : Stocker_Jeton_Session(ID_A)
+    S --> C : recevoir_PDU(STATUT: 204 AUTHENTIFICATION_REUSSIE, Auth: {TokenSession_A, Rôle}) 
+
+    == 2. Opération : Consultation Tiers (VOIR_ANNUAIRE) ==
+    C -> S : envoyer_PDU(ACTION: VOIR_ANNUAIRE, Auth: {TokenSession_A}, Contenu: {UtilisateurCible: Login_B}) [cite: 187, 188]
+    S -> S : Valider_Token(TokenSession_A)
+    S -> CSV : Vérifier_Permission_Accès(Utilisateur_A, Utilisateur_B) // Le cœur de l'opération
+
+    alt Succès (Permission trouvée)
+        CSV --> S : Permission accordée
+        S -> CSV : Lire_Annuaire(Annuaire_B) // Récupération des données du propriétaire B
+        S --> C : recevoir_PDU(STATUT: 200 REQUETE_OK, Contenu: {ListeContacts}) [cite: 246, 189]
+    else Erreur : Permission refusée
+        CSV --> S : Permission non trouvée
+        S --> C : recevoir_PDU(STATUT: 403 ACCES_REFUSE) 
+    else Erreur : Utilisateur B introuvable
+        CSV --> S : Utilisateur B inexistant
+        S --> C : recevoir_PDU(STATUT: 404 RESSOURCE_INEXISTANTE) 
+    end
+  end
+
+== 3. Fin de Session (AUTH_DECONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_DECONNEXION, Auth: {TokenSession_A})
+S -> S : Invalider_Jeton(TokenSession_A)
+S --> C : recevoir_PDU(STATUT: 205 DECONNEXION_REUSSIE) 
+
+@enduml

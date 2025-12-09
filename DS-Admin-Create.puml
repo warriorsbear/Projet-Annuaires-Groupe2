@@ -1,0 +1,52 @@
+@startuml SequenceDiagram_Admin_CreationCompte_CSV
+
+title Diagramme de Séquence : Auth Admin & CREER_COMPTE
+
+actor "Administrateur" as Admin
+participant "Client" as C
+participant "Serveur" as S
+database "Fichiers CSV (Utilisateurs & Annuaires)" as CSV
+
+autonumber
+
+C -> S : connecter_serveur()
+S --> C : Connexion établie
+
+== 1. Tentative d'Authentification (AUTH_CONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_CONNEXION, Contenu: {Login_Admin, MotDePasse})
+S -> CSV : Lire_Utilisateur_MDP(Login_Admin) 
+
+alt Succès de l'authentification (Identifiants valides)
+    CSV --> S : Données Utilisateur (ID, **Rôle: Admin**)
+    S -> S : Générer_Jeton(ID_Admin)
+    S -> S : Stocker_Jeton_Session(ID_Admin)
+    S --> C : recevoir_PDU(STATUT: 204 AUTHENTIFICATION_REUSSIE, Auth: {TokenSession_Admin, Rôle})
+
+    == 2. Opération : Création de Compte (CREER_COMPTE) ==
+    C -> S : envoyer_PDU(ACTION: CREER_COMPTE, Auth: {TokenSession_Admin}, Contenu: {NouveauLogin, NouveauMDP})
+    S -> S : Valider_Token(TokenSession_Admin)
+    S -> S : Vérifier_Rôle_Admin() // Vérification de l'autorisation d'effectuer l'action
+    
+    alt Succès de la création (Rôle OK et Login disponible)
+        S -> CSV : Vérifier_Existence_Login(NouveauLogin)
+
+        alt Login disponible
+            CSV --> S : Login libre
+            S -> CSV : Écrire_Nouvel_Utilisateur(NouveauLogin, NouveauMDP) // Écriture du compte
+            S -> CSV : Créer_Fichier_Annuaire(NouveauLogin) // Création de l'annuaire associé
+            S --> C : recevoir_PDU(STATUT: 201 RESSOURCE_CREEE)
+        else Erreur : Login déjà existant
+            CSV --> S : Login déjà utilisé
+            S --> C : recevoir_PDU(STATUT: 406 CONFLIT_DONNEES)
+        end
+    else Erreur : Rôle non-Admin
+        S --> C : recevoir_PDU(STATUT: 403 ACCES_REFUSE)
+    end
+end
+
+== 3. Fin de Session (AUTH_DECONNEXION) ==
+C -> S : envoyer_PDU(ACTION: AUTH_DECONNEXION, Auth: {TokenSession_Admin})
+S -> S : Invalider_Jeton(TokenSession_Admin)
+S --> C : recevoir_PDU(STATUT: 205 DECONNEXION_REUSSIE)
+
+@enduml

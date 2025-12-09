@@ -1,0 +1,65 @@
+@startuml Annuaire_Diagram_3Classes
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F0F0F0
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam classAttributeIconSize 0
+
+' ============ CLASSES MÉTIER ============
+class Client {
+    - username: string
+    - email: string
+    - password_hash: string
+    - annuaire_path: string
+    ---
+    + charger_annuaire(): void
+    + ajouter_contact(contact): void
+    + supprimer_contact(id_contact): void
+    + modifier_contact(id_contact, champs): void
+    + rechercher_contact(criteres): list
+    + lister_contacts(): list
+}
+
+class Administrateur {
+    ---
+    + creer_utilisateur(username, mot_de_passe): void
+    + supprimer_utilisateur(username): void
+    + modifier_utilisateur(username, nouveaux_champs): void
+    + lister_utilisateurs(): list
+}
+
+class Annuaire {
+    - proprietaire: Client
+    - contacts: list
+    - fichier_csv: string
+    ---
+ 
+}
+
+' ============ RELATIONS D'HÉRITAGE ============
+Administrateur --|> Client
+
+' ============ RELATIONS DE COMPOSITION ============
+Annuaire "*" --o "1" Client : appartient à
+
+' ============ ANNOTATIONS ============
+note right of Administrateur
+Hérite de Client
+Droits supplémentaires pour gérer
+les comptes utilisateurs
+end note
+
+note right of Client
+Utilisateur normal de l'application
+Peut gérer son annuaire personnel
+Peut accorder/révoquer des permissions
+end note
+
+note right of Annuaire
+Un annuaire unique par Client
+Contient les contacts
+Export/Import en CSV
+end note
+
+@enduml

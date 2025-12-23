@@ -7,7 +7,6 @@ import hashlib
 import os
 import uuid
 from typing import List, Dict, Optional, TYPE_CHECKING
-from .Contact import Contact
 
 if TYPE_CHECKING:
     from .Annuaire import Annuaire
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
 class Client:
     """
     Représente un utilisateur et gère ses opérations internes.
-    Aucune logique réseau intégrée.
     """
     
     def __init__(self, mail: str, hash_mot_de_passe: str):
@@ -63,7 +61,7 @@ class Client:
                 self._annuaire.charger()
         return self._annuaire
     
-    def ajouter_contact(self, contact: Contact):
+    def ajouter_contact(self, contact):
         """
         Ajoute un contact à l'annuaire de l'utilisateur.
         
@@ -97,10 +95,10 @@ class Client:
         contacts = annuaire.rechercher({'id_contact': id_contact})
         if contacts:
             contact = contacts[0]
-            contact.mettre_a_jour(champs)
+            contact.update(champs)
             annuaire.sauvegarder()
     
-    def rechercher_contact(self, criteres: Dict) -> List[Contact]:
+    def rechercher_contact(self, criteres: Dict):
         """
         Recherche des contacts dans l'annuaire selon des critères.
         
@@ -113,7 +111,7 @@ class Client:
         annuaire = self.charger_annuaire()
         return annuaire.rechercher(criteres)
     
-    def lister_contacts(self) -> List[Contact]:
+    def lister_contacts(self):
         """
         Liste tous les contacts de l'annuaire.
         

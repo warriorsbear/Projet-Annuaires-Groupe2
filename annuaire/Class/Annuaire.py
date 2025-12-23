@@ -6,7 +6,6 @@ Aucune logique réseau intégrée : modélisation stricte des données et des op
 import os
 import csv
 from typing import List, Dict, Optional, TYPE_CHECKING
-from .Contact import Contact
 
 if TYPE_CHECKING:
     from .Client import Client
@@ -27,7 +26,7 @@ class Annuaire:
         """
         self.proprietaire = proprietaire
         self.fichier_csv = fichier_csv
-        self.contacts: List[Contact] = []
+        self.contacts: List[Dict] = []
     
     def charger(self):
         """
@@ -39,10 +38,10 @@ class Annuaire:
                 with open(self.fichier_csv, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        contact = Contact.from_dict(row)
                         # Conversion de l'id_contact en int
-                        contact.id_contact = int(contact.id_contact) if contact.id_contact else 0
-                        self.contacts.append(contact)
+                        if row.get('id_contact'):
+                            row['id_contact'] = int(row['id_contact'])
+                        self.contacts.append(row)
             except Exception as e:
                 # En cas d'erreur, on démarre avec une liste vide
                 self.contacts = []
@@ -61,7 +60,7 @@ class Annuaire:
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     for contact in self.contacts:
-                        writer.writerow(contact.to_dict())
+                        writer.writerow(contact)
                 else:
                     # Écrire juste l'en-tête si aucun contact
                     writer = csv.DictWriter(f, fieldnames=['id_contact', 'nom', 'prenom', 'email', 'telephone', 'adresse'])
@@ -69,19 +68,20 @@ class Annuaire:
         except Exception as e:
             raise Exception(f"Erreur lors de la sauvegarde de l'annuaire : {e}")
     
-    def ajouter(self, contact: Contact):
+    def ajouter(self, contact: Dict):
         """
         Ajoute un contact à l'annuaire.
         
         Args:
-            contact: Contact à ajouter
+            contact: Dictionnaire contenant les données du contact
         """
-        if not contact.valider():
-            raise ValueError("Le contact n'est pas valide")
+        # Vérifier que le contact a les champs obligatoires
+        if not all(k in contact for k in ['id_contact', 'nom', 'prenom', 'email']):
+            raise ValueError("Le contact doit contenir au minimum : id_contact, nom, prenom, email")
         
         # Vérifier que l'ID n'existe pas déjà
-        if any(c.id_contact == contact.id_contact for c in self.contacts):
-            raise ValueError(f"Un contact avec l'ID {contact.id_contact} existe déjà")
+        if any(c['id_contact'] == contact['id_contact'] for c in self.contacts):
+            raise ValueError(f"Un contact avec l'ID {contact['id_contact']} existe déjà")
         
         self.contacts.append(contact)
     
@@ -92,9 +92,11 @@ class Annuaire:
         Args:
             id_contact: Identifiant du contact à supprimer
         """
-        self.contacts = [c for c in self.contacts if c.id_contact != id_contact]
+        if not any(c['id_contact'] == id_contact for c in self.contacts):
+            raise ValueError(f"Aucun contact avec l'ID {id_contact} trouvé")
+        self.contacts = [c for c in self.contacts if c['id_contact'] != id_contact]
     
-    def rechercher(self, criteres: Dict) -> List[Contact]:
+    def rechercher(self, criteres: Dict) -> List[Dict]:
         """
         Recherche des contacts selon des critères.
         
@@ -108,21 +110,21 @@ class Annuaire:
         
         for critere, valeur in criteres.items():
             if critere == 'id_contact':
-                resultats = [c for c in resultats if c.id_contact == valeur]
+                resultats = [c for c in resultats if c.get('id_contact') == valeur]
             elif critere == 'nom':
-                resultats = [c for c in resultats if valeur.lower() in c.nom.lower()]
+                resultats = [c for c in resultats if valeur.lower() in c.get('nom', '').lower()]
             elif critere == 'prenom':
-                resultats = [c for c in resultats if valeur.lower() in c.prenom.lower()]
+                resultats = [c for c in resultats if valeur.lower() in c.get('prenom', '').lower()]
             elif critere == 'email':
-                resultats = [c for c in resultats if valeur.lower() in c.email.lower()]
+                resultats = [c for c in resultats if valeur.lower() in c.get('email', '').lower()]
             elif critere == 'telephone':
-                resultats = [c for c in resultats if valeur in c.telephone]
+                resultats = [c for c in resultats if valeur in c.get('telephone', '')]
             elif critere == 'adresse':
-                resultats = [c for c in resultats if valeur.lower() in c.adresse.lower()]
+                resultats = [c for c in resultats if valeur.lower() in c.get('adresse', '').lower()]
         
         return resultats
     
-    def lister(self) -> List[Contact]:
+    def lister(self) -> List[Dict]:
         """
         Liste tous les contacts de l'annuaire.
         
@@ -146,20 +148,21 @@ class Annuaire:
             with open(fichier, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    contact = Contact.from_dict(row)
                     # Conversion de l'id_contact en int
-                    contact.id_contact = int(contact.id_contact) if contact.id_contact else 0
-                    if contact.valider():
-                        nouveaux_contacts.append(contact)
+                    if row.get('id_contact'):
+                        row['id_contact'] = int(row['id_contact'])
+                    # Vérifier les champs obligatoires
+                    if all(k in row for k in ['id_contact', 'nom', 'prenom', 'email']):
+                        nouveaux_contacts.append(row)
         except Exception as e:
             raise Exception(f"Erreur lors de l'import CSV : {e}")
         
         # Ajouter les nouveaux contacts (en évitant les doublons d'ID)
-        ids_existants = {c.id_contact for c in self.contacts}
+        ids_existants = {c['id_contact'] for c in self.contacts}
         for contact in nouveaux_contacts:
-            if contact.id_contact not in ids_existants:
+            if contact['id_contact'] not in ids_existants:
                 self.contacts.append(contact)
-                ids_existants.add(contact.id_contact)
+                ids_existants.add(contact['id_contact'])
     
     def exporter_csv(self) -> str:
         """

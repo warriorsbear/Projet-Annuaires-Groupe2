@@ -2,12 +2,100 @@ import sys
 import os
 from pathlib import Path
 import hashlib
+import uuid
+import json
 data_dir = Path(__file__).parent.parent / "data"
 import csv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from Class import Client, Administrateur  # type: ignore
+from Class import Client, Administrateur # type: ignore
+
+ADMIN_EMAIL = "admin@admin.fr"
+ADMIN_PASSWORD = "adminadmin"
+
+def verifier_creer_admin():
+    """
+    Vérifie si l'admin existe dans clients.csv, sinon le crée.
+    """
+    clients_csv_path = data_dir / "clients.csv"
+    
+    # Vérifier si le fichier existe
+    admin_existe = False
+    if clients_csv_path.exists():
+        # Lire le fichier pour vérifier si l'admin existe
+        try:
+            with open(clients_csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get("email") == ADMIN_EMAIL:
+                        admin_existe = True
+                        break
+        except Exception:
+            # Si erreur de lecture, on considère que l'admin n'existe pas
+            admin_existe = False
+    
+    # Si l'admin n'existe pas, le créer
+    if not admin_existe:
+        # Génération du hash du mot de passe
+        hash_mdp = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+        
+        # Génération d'un identifiant unique pour l'admin
+        identifiant = str(uuid.uuid4())
+        
+        # Chemin d'annuaire pour l'admin
+        chemin_annuaire = f"data/{identifiant}.csv"
+        chemin_annuaire_absolu = data_dir / f"{identifiant}.csv"
+        
+        # Préparer la ligne à ajouter
+        nouvelle_ligne = {
+            "id_client": identifiant,
+            "email": ADMIN_EMAIL,
+            "hash_mdp": hash_mdp,
+            "chemin_annuaire": chemin_annuaire,
+            "liste_permissions_accordees": "[]",
+            "liste_permissions_recues": "[]"
+        }
+        
+        # Écrire dans le fichier CSV
+        file_exists = clients_csv_path.exists()
+        
+        # S'assurer qu'il y a un saut de ligne à la fin du fichier avant d'ajouter
+        if file_exists:
+            # Lire les dernières lignes pour vérifier le format
+            with open(clients_csv_path, "rb") as f:
+                try:
+                    f.seek(-1, 2)  # Aller à la dernière position
+                    dernier_caractere = f.read(1)
+                    if dernier_caractere != b"\n":
+                        # Ajouter un saut de ligne si nécessaire
+                        with open(clients_csv_path, "ab") as f_append:
+                            f_append.write(b"\n")
+                except (IOError, OSError):
+                    # Si le fichier est vide ou erreur, on continue
+                    pass
+        
+        with open(clients_csv_path, "a", encoding="utf-8", newline="") as f:
+            fieldnames = ["id_client", "email", "hash_mdp", "chemin_annuaire", 
+                         "liste_permissions_accordees", "liste_permissions_recues"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            
+            # Écrire l'en-tête si le fichier est nouveau
+            if not file_exists:
+                writer.writeheader()
+            
+            writer.writerow(nouvelle_ligne)
+        
+        # Créer le fichier CSV d'annuaire associé (vide avec juste l'en-tête)
+        with open(chemin_annuaire_absolu, "w", encoding="utf-8", newline="") as f:
+            fieldnames_annuaire = ["id_contact", "nom", "prenom", "email", "telephone", "adresse"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames_annuaire)
+            writer.writeheader()
+        
+        print(f"Administrateur créé : {ADMIN_EMAIL}")
 
 def creer_serveur():
+    # Vérifier et créer l'admin si nécessaire
+    verifier_creer_admin()
+    
     print("serveur créé, choisir une action :")
     print("1. Se connecter")
     print("2. Quitter")
@@ -27,67 +115,69 @@ def connecter_serveur():
     mot_de_passe = input("Mot de passe : ")
     
     mot_de_passe_hash = hashlib.sha256(mot_de_passe.encode()).hexdigest()
-    client_connecte = None
+    utilisateur_connecte = None
+    est_admin = email == ADMIN_EMAIL
     
-    # Lecture du fichier clients.csv et recherche du client
+    # Lecture du fichier clients.csv et recherche du client/admin
     with open(data_dir / "clients.csv", "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row["email"] == email and row["hash_mdp"] == mot_de_passe_hash:
-                # Création de l'objet Client avec la classe associée
-                client_connecte = Client(row["email"], row["hash_mdp"])
+                # Création de l'objet Administrateur ou Client selon l'email
+                if est_admin:
+                    utilisateur_connecte = Administrateur(row["email"], row["hash_mdp"])
+                else:
+                    utilisateur_connecte = Client(row["email"], row["hash_mdp"])
                 
-                # Restauration des informations du client depuis le CSV
-                # L'identifiant peut être dans le CSV ou généré automatiquement
+                # Restauration des informations depuis le CSV
                 if row.get("id_client"):
-                    # Si on a un UUID dans id_client, on l'utilise
                     try:
-                        client_connecte.identifiant = row["id_client"]
+                        utilisateur_connecte.identifiant = row["id_client"]
                     except:
-                        pass  # Garde l'UUID généré automatiquement
+                        pass
                 
-                # Restauration du chemin d'annuaire (conversion en chemin absolu si nécessaire)
+                # Restauration du chemin d'annuaire
                 if row.get("chemin_annuaire"):
                     chemin = row["chemin_annuaire"]
-                    # Si le chemin est relatif, le convertir en chemin absolu depuis le répertoire data
                     if not os.path.isabs(chemin):
                         chemin = str(data_dir / Path(chemin).name)
-                    client_connecte.chemin_annuaire = chemin
+                    utilisateur_connecte.chemin_annuaire = chemin
                 
-                # Restauration des permissions (si présentes dans le CSV)
-                # Les permissions peuvent être stockées comme des listes JSON ou séparées par des virgules
+                # Restauration des permissions
                 if row.get("liste_permissions_accordees"):
                     perms_accordees = row["liste_permissions_accordees"].strip()
                     if perms_accordees and perms_accordees != "[]":
                         try:
-                            import json
-                            client_connecte.permissions_accordees = json.loads(perms_accordees)
+                            utilisateur_connecte.permissions_accordees = json.loads(perms_accordees)
                         except:
-                            # Si ce n'est pas du JSON, essayer de parser comme une liste simple
                             perms_accordees = perms_accordees.strip("[]").replace("'", "").replace('"', "")
                             if perms_accordees:
-                                client_connecte.permissions_accordees = [p.strip() for p in perms_accordees.split(",") if p.strip()]
+                                utilisateur_connecte.permissions_accordees = [p.strip() for p in perms_accordees.split(",") if p.strip()]
                 
                 if row.get("liste_permissions_recues"):
                     perms_recues = row["liste_permissions_recues"].strip()
                     if perms_recues and perms_recues != "[]":
                         try:
-                            import json
-                            client_connecte.permissions_recues = json.loads(perms_recues)
+                            utilisateur_connecte.permissions_recues = json.loads(perms_recues)
                         except:
                             perms_recues = perms_recues.strip("[]").replace("'", "").replace('"', "")
                             if perms_recues:
-                                client_connecte.permissions_recues = [p.strip() for p in perms_recues.split(",") if p.strip()]
+                                utilisateur_connecte.permissions_recues = [p.strip() for p in perms_recues.split(",") if p.strip()]
                 
                 print("Connexion réussie")
+                if est_admin:
+                    print("Vous êtes connecté en tant qu'administrateur.")
                 break
     
-    if client_connecte is None:
+    if utilisateur_connecte is None:
         print("Connexion échouée")
         return
     
-    # Utilisation du client connecté pour les opérations
-    menu_actions(client_connecte)
+    # Utilisation de l'utilisateur connecté pour les opérations
+    if est_admin:
+        menu_actions_admin(utilisateur_connecte)
+    else:
+        menu_actions(utilisateur_connecte)
 
 
 def menu_actions(client: Client):
@@ -104,11 +194,10 @@ def menu_actions(client: Client):
     print("3. supprimer un contact")
     print("4. modifier un contact")
     print("5. rechercher un contact")
-    print("6. lister les contacts")
-    print("7. accorder une permission")
-    print("8. retirer une permission")
-    print("9. exporter l'annuaire")
-    print("10. Se déconnecter")
+    print("6. accorder une permission")
+    print("7. retirer une permission")
+    print("8. exporter l'annuaire")
+    print("9. Se déconnecter")
     choix = input("Choisir une action : ")
     if choix == "1":
         visualiser_annuaire(client)
@@ -121,14 +210,12 @@ def menu_actions(client: Client):
     elif choix == "5":
         rechercher_contact(client)
     elif choix == "6":
-        lister_contacts(client)
-    elif choix == "7":
         accorder_permission(client)
-    elif choix == "8":
+    elif choix == "7":
         retirer_permission(client)
-    elif choix == "9":
+    elif choix == "8":
         exporter_annuaire(client)
-    elif choix == "10":
+    elif choix == "9":
         deconnecter_serveur()
         exit()
     else:
@@ -286,9 +373,262 @@ def exporter_annuaire(client: Client):
     menu_actions(client)
 
 
+def menu_actions_admin(admin: Administrateur):
+    """
+    Affiche le menu d'actions pour les administrateurs.
+    
+    Args:
+        admin: Instance de l'Administrateur connecté
+    """
+    print("--------------------------------")
+    print("Menu Administrateur - Choisir une action :")
+    print("1. visualiser l'annuaire")
+    print("2. ajouter un contact")
+    print("3. supprimer un contact")
+    print("4. modifier un contact")
+    print("5. rechercher un contact")
+    print("6. accorder une permission")
+    print("7. retirer une permission")
+    print("8. exporter l'annuaire")
+    print("9. créer un utilisateur")
+    print("10. supprimer un utilisateur")
+    print("11. modifier un utilisateur")
+    print("12. lister les utilisateurs")
+    print("13. Se déconnecter")
+    choix = input("Choisir une action : ")
+    if choix == "1":
+        visualiser_annuaire(admin)
+    elif choix == "2":
+        ajouter_contact(admin)
+    elif choix == "3":
+        supprimer_contact(admin)
+    elif choix == "4":
+        modifier_contact(admin)
+    elif choix == "5":
+        rechercher_contact(admin)
+    elif choix == "6":
+        accorder_permission(admin)
+    elif choix == "7":
+        retirer_permission(admin)
+    elif choix == "8":
+        exporter_annuaire(admin)
+    elif choix == "9":
+        creer_utilisateur(admin)
+    elif choix == "10":
+        supprimer_utilisateur(admin)
+    elif choix == "11":
+        modifier_utilisateur(admin)
+    elif choix == "12":
+        lister_utilisateurs(admin)
+    elif choix == "13":
+        deconnecter_serveur()
+        exit()
+    else:
+        print("Choix invalide")
+        menu_actions_admin(admin)
+
+
+def creer_utilisateur(admin: Administrateur):
+    """Crée un nouvel utilisateur (réservé aux administrateurs)."""
+    print("Création d'un nouvel utilisateur :")
+    email = input("Email du nouvel utilisateur : ")
+    mot_de_passe = input("Mot de passe : ")
+    
+    # Vérifier si l'email existe déjà
+    clients_csv_path = data_dir / "clients.csv"
+    email_existe = False
+    
+    if clients_csv_path.exists():
+        with open(clients_csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("email") == email:
+                    email_existe = True
+                    break
+    
+    if email_existe:
+        print(f"Erreur : L'email {email} existe déjà.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    # Créer le nouvel utilisateur avec la classe Administrateur
+    nouvel_utilisateur_dict = admin.creer_utilisateur(email, mot_de_passe)
+    
+    # Générer un identifiant unique
+    identifiant = nouvel_utilisateur_dict["identifiant"]
+    hash_mdp = nouvel_utilisateur_dict["hash_mot_de_passe"]
+    chemin_annuaire = f"data/{identifiant}.csv"
+    
+    # Ajouter l'utilisateur au fichier CSV
+    nouvelle_ligne = {
+        "id_client": identifiant,
+        "email": email,
+        "hash_mdp": hash_mdp,
+        "chemin_annuaire": chemin_annuaire,
+        "liste_permissions_accordees": "[]",
+        "liste_permissions_recues": "[]"
+    }
+    
+    with open(clients_csv_path, "a", encoding="utf-8", newline="") as f:
+        fieldnames = ["id_client", "email", "hash_mdp", "chemin_annuaire", 
+                     "liste_permissions_accordees", "liste_permissions_recues"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writerow(nouvelle_ligne)
+    
+    print(f"Utilisateur {email} créé avec succès.")
+    print()
+    menu_actions_admin(admin)
+
+
+def supprimer_utilisateur(admin: Administrateur):
+    """Supprime un utilisateur (réservé aux administrateurs)."""
+    email = input("Email de l'utilisateur à supprimer : ")
+    
+    if email == ADMIN_EMAIL:
+        print("Erreur : Impossible de supprimer l'administrateur.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    clients_csv_path = data_dir / "clients.csv"
+    
+    if not clients_csv_path.exists():
+        print("Aucun utilisateur trouvé.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    # Lire tous les utilisateurs
+    lignes = []
+    utilisateur_trouve = False
+    
+    with open(clients_csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        for row in reader:
+            if row.get("email") != email:
+                lignes.append(row)
+            else:
+                utilisateur_trouve = True
+                # Supprimer aussi le fichier d'annuaire associé
+                chemin_annuaire = row.get("chemin_annuaire", "")
+                if chemin_annuaire:
+                    chemin_absolu = data_dir / Path(chemin_annuaire).name
+                    if chemin_absolu.exists():
+                        try:
+                            os.remove(chemin_absolu)
+                        except:
+                            pass
+    
+    if not utilisateur_trouve:
+        print(f"Erreur : L'utilisateur {email} n'existe pas.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    # Réécrire le fichier sans l'utilisateur supprimé
+    with open(clients_csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(lignes)
+    
+    print(f"Utilisateur {email} supprimé avec succès.")
+    print()
+    menu_actions_admin(admin)
+
+
+def modifier_utilisateur(admin: Administrateur):
+    """Modifie un utilisateur (réservé aux administrateurs)."""
+    email = input("Email de l'utilisateur à modifier : ")
+    
+    clients_csv_path = data_dir / "clients.csv"
+    
+    if not clients_csv_path.exists():
+        print("Aucun utilisateur trouvé.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    # Lire tous les utilisateurs et trouver celui à modifier
+    lignes = []
+    utilisateur_trouve = False
+    
+    with open(clients_csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        
+        for row in reader:
+            if row.get("email") == email:
+                utilisateur_trouve = True
+                print("Entrez les nouveaux champs (laisser vide pour ne pas modifier) :")
+                
+                nouveau_email = input(f"Nouvel email (actuel: {email}) : ")
+                nouveau_mdp = input("Nouveau mot de passe (laisser vide pour ne pas modifier) : ")
+                
+                if nouveau_email:
+                    row["email"] = nouveau_email
+                
+                if nouveau_mdp:
+                    row["hash_mdp"] = hashlib.sha256(nouveau_mdp.encode()).hexdigest()
+                
+                lignes.append(row)
+            else:
+                lignes.append(row)
+    
+    if not utilisateur_trouve:
+        print(f"Erreur : L'utilisateur {email} n'existe pas.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    # Réécrire le fichier
+    with open(clients_csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(lignes)
+    
+    print(f"Utilisateur modifié avec succès.")
+    print()
+    menu_actions_admin(admin)
+
+
+def lister_utilisateurs(admin: Administrateur):
+    """Liste tous les utilisateurs (réservé aux administrateurs)."""
+    clients_csv_path = data_dir / "clients.csv"
+    
+    if not clients_csv_path.exists():
+        print("Aucun utilisateur trouvé.")
+        print()
+        menu_actions_admin(admin)
+        return
+    
+    utilisateurs = []
+    with open(clients_csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            utilisateurs.append({
+                "email": row.get("email", ""),
+                "identifiant": row.get("id_client", ""),
+                "est_admin": row.get("email", "") == ADMIN_EMAIL
+            })
+    
+    if not utilisateurs:
+        print("Aucun utilisateur trouvé.")
+    else:
+        print(f"\nListe des utilisateurs ({len(utilisateurs)} utilisateur(s)) :")
+        for user in utilisateurs:
+            role = "Administrateur" if user["est_admin"] else "Client"
+            print(f"  - Email: {user['email']}, ID: {user['identifiant']}, Rôle: {role}")
+    
+    print()
+    menu_actions_admin(admin)
+
+
 def deconnecter_serveur():
     """Déconnecte le client."""
     print("Déconnexion réussie.")
+    exit()
 
 def envoyer_pdu():
     pass

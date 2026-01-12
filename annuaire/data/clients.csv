@@ -1,0 +1,2 @@
+id_client,email,hash_mdp,chemin_annuaire,liste_permissions_accordees,liste_permissions_recues
+1,test@example.com,8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92,data/893da439-c5f6-4265-b71f-301b67bebbbe.csv,[],[]

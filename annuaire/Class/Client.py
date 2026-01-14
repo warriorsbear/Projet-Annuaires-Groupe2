@@ -35,19 +35,8 @@ class Client:
         self.permissions_recues: List[str] = []  # Liste des identifiants ayant accordé des permissions
         self._annuaire: Optional[Annuaire] = None
     
-    def verifier_mot_de_passe(self, hash_client: str) -> bool:
-        """
-        Vérifie si le hash fourni correspond au mot de passe de l'utilisateur.
-        
-        Args:
-            hash_client: Hash du mot de passe à vérifier
-            
-        Returns:
-            True si le hash correspond, False sinon
-        """
-        return self.hash_mot_de_passe == hash_client
     
-    def charger_annuaire(self) -> 'Annuaire':
+    def _charger_annuaire(self) -> 'Annuaire':
         """
         Charge l'annuaire de l'utilisateur depuis le fichier CSV.
         
@@ -68,7 +57,7 @@ class Client:
         Args:
             contact: Contact à ajouter
         """
-        annuaire = self.charger_annuaire()
+        annuaire = self._charger_annuaire()
         annuaire.ajouter(contact)
         annuaire.sauvegarder()
     
@@ -79,7 +68,7 @@ class Client:
         Args:
             id_contact: Identifiant du contact à supprimer
         """
-        annuaire = self.charger_annuaire()
+        annuaire = self._charger_annuaire()
         annuaire.supprimer(id_contact)
         annuaire.sauvegarder()
     
@@ -91,7 +80,7 @@ class Client:
             id_contact: Identifiant du contact à modifier
             champs: Dictionnaire contenant les champs à modifier
         """
-        annuaire = self.charger_annuaire()
+        annuaire = self._charger_annuaire()
         contacts = annuaire.rechercher({'id_contact': id_contact})
         if contacts:
             contact = contacts[0]
@@ -108,7 +97,7 @@ class Client:
         Returns:
             Liste des contacts correspondant aux critères
         """
-        annuaire = self.charger_annuaire()
+        annuaire = self._charger_annuaire()
         return annuaire.rechercher(criteres)
     
     def lister_contacts(self):
@@ -118,7 +107,7 @@ class Client:
         Returns:
             Liste de tous les contacts
         """
-        annuaire = self.charger_annuaire()
+        annuaire = self._charger_annuaire()
         return annuaire.lister()
     
     def accorder_permission(self, utilisateur: str):

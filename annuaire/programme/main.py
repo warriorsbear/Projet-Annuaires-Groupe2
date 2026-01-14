@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import uuid
 import json
+import getpass
 data_dir = Path(__file__).parent.parent / "data"
 import csv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -112,7 +113,7 @@ def creer_serveur():
 
 def connecter_serveur():
     email = input("Email : ")
-    mot_de_passe = input("Mot de passe : ")
+    mot_de_passe = getpass.getpass("Mot de passe : ")
     
     mot_de_passe_hash = hashlib.sha256(mot_de_passe.encode()).hexdigest()
     utilisateur_connecte = None
@@ -231,7 +232,7 @@ def visualiser_annuaire(client: Client):
     else:
         print(f"\nAnnuaire de {client.mail} ({len(contacts)} contact(s)):")
         for contact in contacts:
-            print(f"  - ID: {contact.get('id_contact')}, {contact.get('prenom')} {contact.get('nom')}, Email: {contact.get('email')}")
+            print(f"  - ID: {contact.get('id_contact')}, {contact.get('prenom')} {contact.get('nom')}, Email: {contact.get('email')}, Adresse: {contact.get('adresse')}, Téléphone: {contact.get('telephone')}")
     print()
     menu_actions(client)
 
@@ -239,7 +240,6 @@ def visualiser_annuaire(client: Client):
 def ajouter_contact(client: Client):
     """Ajoute un contact à l'annuaire."""
     print("Ajout d'un contact :")
-    id_contact = int(input("ID du contact : "))
     nom = input("Nom : ")
     prenom = input("Prénom : ")
     email = input("Email : ")
@@ -247,7 +247,6 @@ def ajouter_contact(client: Client):
     adresse = input("Adresse : ")
     
     contact = {
-        'id_contact': id_contact,
         'nom': nom,
         'prenom': prenom,
         'email': email,

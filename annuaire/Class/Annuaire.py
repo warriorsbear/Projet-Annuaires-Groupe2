@@ -76,13 +76,18 @@ class Annuaire:
             contact: Dictionnaire contenant les données du contact
         """
         # Vérifier que le contact a les champs obligatoires
-        if not all(k in contact for k in ['id_contact', 'nom', 'prenom', 'email']):
-            raise ValueError("Le contact doit contenir au minimum : id_contact, nom, prenom, email")
-        
-        # Vérifier que l'ID n'existe pas déjà
-        if any(c['id_contact'] == contact['id_contact'] for c in self.contacts):
-            raise ValueError(f"Un contact avec l'ID {contact['id_contact']} existe déjà")
-        
+        if not all(k in contact for k in ['nom', 'prenom', 'email']):
+            raise ValueError("Le contact doit contenir au minimum : nom, prenom, email")
+
+        # Générer automatiquement un nouvel id_contact si nécessaire
+        if self.contacts:
+            # Récupérer le max des id existants (en supposant des entiers)
+            max_id = max(int(c.get('id_contact', 0) or 0) for c in self.contacts)
+        else:
+            max_id = 0
+
+        contact['id_contact'] = max_id + 1
+
         self.contacts.append(contact)
     
     def supprimer(self, id_contact: int):

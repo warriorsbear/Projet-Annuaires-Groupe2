@@ -1,9 +1,0 @@
-[
-  {
-    "mail": "test@example.com",
-    "hash_mot_de_passe": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
-    "identifiant": "893da439-c5f6-4265-b71f-301b67bebbbe",
-    "chemin_annuaire": "data/893da439-c5f6-4265-b71f-301b67bebbbe.csv",
-    "est_admin": false
-  }
-]

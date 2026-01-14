@@ -612,6 +612,7 @@ def lister_utilisateurs(admin: Administrateur):
                 "est_admin": row.get("email", "") == ADMIN_EMAIL
             })
     
+    
     if not utilisateurs:
         print("Aucun utilisateur trouvé.")
     else:

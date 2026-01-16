@@ -224,6 +224,7 @@ def menu_actions(client: Client):
         menu_actions(client)
 
 
+
 def visualiser_annuaire(client: Client):
     """Visualise l'annuaire du client."""
     contacts = client.lister_contacts()

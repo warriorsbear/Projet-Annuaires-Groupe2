@@ -144,27 +144,6 @@ def connecter_serveur():
                         chemin = str(data_dir / Path(chemin).name)
                     utilisateur_connecte.chemin_annuaire = chemin
                 
-                # Restauration des permissions
-                if row.get("liste_permissions_accordees"):
-                    perms_accordees = row["liste_permissions_accordees"].strip()
-                    if perms_accordees and perms_accordees != "[]":
-                        try:
-                            utilisateur_connecte.permissions_accordees = json.loads(perms_accordees)
-                        except:
-                            perms_accordees = perms_accordees.strip("[]").replace("'", "").replace('"', "")
-                            if perms_accordees:
-                                utilisateur_connecte.permissions_accordees = [p.strip() for p in perms_accordees.split(",") if p.strip()]
-                
-                if row.get("liste_permissions_recues"):
-                    perms_recues = row["liste_permissions_recues"].strip()
-                    if perms_recues and perms_recues != "[]":
-                        try:
-                            utilisateur_connecte.permissions_recues = json.loads(perms_recues)
-                        except:
-                            perms_recues = perms_recues.strip("[]").replace("'", "").replace('"', "")
-                            if perms_recues:
-                                utilisateur_connecte.permissions_recues = [p.strip() for p in perms_recues.split(",") if p.strip()]
-                
                 print("Connexion réussie")
                 if est_admin:
                     print("Vous êtes connecté en tant qu'administrateur.")
@@ -176,7 +155,7 @@ def connecter_serveur():
     
     # Utilisation de l'utilisateur connecté pour les opérations
     if est_admin:
-        menu_actions_admin(utilisateur_connecte)
+        menu_actions_admin(utilisateur_connecte) # type: ignore
     else:
         menu_actions(utilisateur_connecte)
 
@@ -460,7 +439,7 @@ def supprimer_utilisateur(admin: Administrateur):
     
     # Réécrire le fichier sans l'utilisateur supprimé
     with open(clients_csv_path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames) # type: ignore
         writer.writeheader()
         writer.writerows(lignes)
     
@@ -515,7 +494,7 @@ def modifier_utilisateur(admin: Administrateur):
     
     # Réécrire le fichier
     with open(clients_csv_path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames) # type: ignore
         writer.writeheader()
         writer.writerows(lignes)
     

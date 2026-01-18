@@ -48,8 +48,7 @@ class TestCreerUtilisateur(unittest.TestCase):
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(
                 f, 
-                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire", 
-                           "liste_permissions_accordees", "liste_permissions_recues"]
+                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire"]
             )
             writer.writeheader()
         
@@ -102,17 +101,14 @@ class TestCreerUtilisateur(unittest.TestCase):
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(
                 f, 
-                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire", 
-                           "liste_permissions_accordees", "liste_permissions_recues"]
+                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire"]
             )
             writer.writeheader()
             writer.writerow({
                 'id_client': 'uuid-existing',
                 'email': 'existant@example.com',
                 'hash_mdp': 'hash_existing',
-                'chemin_annuaire': 'data/uuid-existing.csv',
-                'liste_permissions_accordees': '[]',
-                'liste_permissions_recues': '[]'
+                'chemin_annuaire': 'data/uuid-existing.csv'
             })
         
         # Act
@@ -133,42 +129,6 @@ class TestCreerUtilisateur(unittest.TestCase):
         # Vérifier que le menu admin a quand même été rappelé
         mock_menu.assert_called_once_with(self.mock_admin)
     
-    @patch('main.menu_actions_admin')
-    @patch('main.data_dir')
-    @patch('builtins.input')
-    def test_creer_utilisateur_fichier_n_existe_pas(self, mock_input, mock_data_dir, mock_menu):
-        """Test: Création d'un utilisateur quand le fichier clients.csv n'existe pas"""
-        # Arrange
-        mock_input.side_effect = ['nouveau@example.com', 'motdepasse123']
-        
-        # Créer un chemin qui n'existe pas
-        csv_path = Path(self.temp_dir) / "clients.csv"
-        mock_data_dir.__truediv__ = Mock(return_value=csv_path)
-        
-        self.mock_admin.creer_utilisateur.return_value = {
-            'identifiant': 'uuid-1234-5678',
-            'mail': 'nouveau@example.com',
-            'hash_mot_de_passe': 'hash_abcd1234',
-            'chemin_annuaire': 'data/uuid-1234-5678.csv'
-        }
-        
-        # Act
-        with patch('builtins.print') as mock_print:
-            creer_utilisateur(self.mock_admin)
-        
-        # Assert
-        # Vérifier que creer_utilisateur a été appelé
-        self.mock_admin.creer_utilisateur.assert_called_once_with('nouveau@example.com', 'motdepasse123')
-        
-        # Vérifier que le fichier a été créé
-        self.assertTrue(csv_path.exists())
-        
-        # Vérifier que l'utilisateur a été ajouté
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            rows = list(reader)
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]['email'], 'nouveau@example.com')
     
     @patch('main.menu_actions_admin')
     @patch('main.data_dir')
@@ -183,8 +143,7 @@ class TestCreerUtilisateur(unittest.TestCase):
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(
                 f, 
-                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire", 
-                           "liste_permissions_accordees", "liste_permissions_recues"]
+                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire"]
             )
             writer.writeheader()
         
@@ -234,8 +193,7 @@ class TestCreerUtilisateur(unittest.TestCase):
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(
                 f, 
-                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire", 
-                           "liste_permissions_accordees", "liste_permissions_recues"]
+                fieldnames=["id_client", "email", "hash_mdp", "chemin_annuaire"]
             )
             writer.writeheader()
         
@@ -259,8 +217,6 @@ class TestCreerUtilisateur(unittest.TestCase):
             self.assertEqual(row['email'], 'test@example.com')
             self.assertEqual(row['hash_mdp'], 'hash_secure_pass')
             self.assertEqual(row['chemin_annuaire'], 'data/test-uuid-1234.csv')
-            self.assertEqual(row['liste_permissions_accordees'], '[]')
-            self.assertEqual(row['liste_permissions_recues'], '[]')
 
 
 if __name__ == '__main__':

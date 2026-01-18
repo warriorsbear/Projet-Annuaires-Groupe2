@@ -6,3 +6,5 @@ b7634b7b-0069-4dc7-bfc2-075b1420b9d4,romeo.test@gmail.com,f2d81a260dea8a100dd517
 17fc9718-458a-4201-8add-f6535dbab9fd,qwerty@qwerty.com,65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5,data/17fc9718-458a-4201-8add-f6535dbab9fd.csv
 981008f8-9303-487f-b4b8-ac1fd23d6671,a@a.fr,9834876dcfb05cb167a5c24953eba58c4ac89b1adf57f28f2f9d09af107ee8f0,data/981008f8-9303-487f-b4b8-ac1fd23d6671.csv
 24e76cbc-c3a6-4fd6-9637-b6b3cc94a46a,nicolas.ruiz@gmail.com,807a09440428c0a8aef58bd3ece32938b0d76e638119e47619756f5c2c20ff3a,data/24e76cbc-c3a6-4fd6-9637-b6b3cc94a46a.csv
+uuid-1234-5678,nouveau@example.com,hash_abcd1234,data/uuid-1234-5678.csv
+uuid-user1,user1@example.com,hash_user1,data/uuid-user1.csv

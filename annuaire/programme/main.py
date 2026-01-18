@@ -399,14 +399,11 @@ def creer_utilisateur(admin: Administrateur):
         "id_client": identifiant,
         "email": email,
         "hash_mdp": hash_mdp,
-        "chemin_annuaire": chemin_annuaire,
-        "liste_permissions_accordees": "[]",
-        "liste_permissions_recues": "[]"
+        "chemin_annuaire": chemin_annuaire
     }
     
     with open(clients_csv_path, "a", encoding="utf-8", newline="") as f:
-        fieldnames = ["id_client", "email", "hash_mdp", "chemin_annuaire", 
-                     "liste_permissions_accordees", "liste_permissions_recues"]
+        fieldnames = ["id_client", "email", "hash_mdp", "chemin_annuaire"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writerow(nouvelle_ligne)
     

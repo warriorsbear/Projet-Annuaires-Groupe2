@@ -8,10 +8,19 @@ import sys
 from pathlib import Path
 
 # Ajouter le chemin pour importer les modules
-sys.path.insert(0, str(Path(__file__).parent.parent / "Class"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "programme"))
+project_root = Path(__file__).parent.parent
+programme_dir = project_root / "programme"
+sys.path.insert(0, str(programme_dir))
+sys.path.insert(0, str(project_root / "Class"))
 
-from main import visualiser_annuaire
+# Import depuis le module main dans le répertoire programme
+import importlib.util
+main_spec = importlib.util.spec_from_file_location("main", programme_dir / "main.py")
+main_module = importlib.util.module_from_spec(main_spec)
+main_spec.loader.exec_module(main_module)
+# Enregistrer le module dans sys.modules pour que les patches fonctionnent
+sys.modules['main'] = main_module
+visualiser_annuaire = main_module.visualiser_annuaire
 
 
 class TestVisualiserAnnuaire(unittest.TestCase):

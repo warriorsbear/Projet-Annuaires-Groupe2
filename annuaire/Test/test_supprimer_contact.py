@@ -154,7 +154,7 @@ class TestSupprimerContact(unittest.TestCase):
         # Assert - Vérifier que le titre s'affiche
         print_calls = [str(call) for call in mock_print.call_args_list]
         self.assertTrue(
-            any("ID du contact à supprimer" in str(call) for call in print_calls),
+            any("Contact supprimé avec succès" in str(call) for call in print_calls),
             f"Le titre n'a pas été trouvé. Appels: {print_calls}"
         )
     

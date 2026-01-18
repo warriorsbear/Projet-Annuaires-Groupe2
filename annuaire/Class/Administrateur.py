@@ -6,6 +6,9 @@ Aucune logique réseau intégrée : modélisation stricte des données et des op
 
 from typing import List, Dict
 from .Client import Client
+import csv
+import os
+from pathlib import Path
 
 
 class Administrateur(Client):
@@ -45,16 +48,27 @@ class Administrateur(Client):
         empreinte = hashlib.sha256(mot_de_passe.encode()).hexdigest()
         
         # Création du chemin d'annuaire basé sur l'identifiant unique
-        chemin_annuaire = f"data/annuaires/{identifiant}.csv"
+        # Déterminer le chemin absolu depuis le répertoire Class
+        current_file = Path(__file__)
+        data_dir = current_file.parent.parent / "data"
+        chemin_annuaire_relatif = f"data/{identifiant}.csv"
+        chemin_annuaire_absolu = data_dir / f"{identifiant}.csv"
+        
+        # Créer le répertoire data s'il n'existe pas
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        # Création du fichier d'annuaire vide
+        with open(chemin_annuaire_absolu, "w", encoding="utf-8", newline="") as f:
+            fieldnames_annuaire = ["id_contact", "nom", "prenom", "email", "telephone", "adresse"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames_annuaire)
+            writer.writeheader()
         
         # Création d'un dictionnaire représentant le nouvel utilisateur
         nouvel_utilisateur = {
             'identifiant': identifiant,
             'mail': mail,
             'hash_mot_de_passe': empreinte,
-            'chemin_annuaire': chemin_annuaire,
-            'permissions_accordees': [],
-            'permissions_recues': []
+            'chemin_annuaire': chemin_annuaire_relatif
         }
         
         return nouvel_utilisateur

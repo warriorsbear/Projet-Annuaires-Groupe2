@@ -189,16 +189,13 @@ def menu_actions(client: Client):
         client: Instance du Client connecté
     """
     print("--------------------------------")
-    print("Choisir une action :")
-    print("1. visualiser l'annuaire")
+    print("Menu Client - Choisir une action :")
+    print("1. visualiser son annuaire")
     print("2. ajouter un contact")
     print("3. supprimer un contact")
     print("4. modifier un contact")
     print("5. rechercher un contact")
-    print("6. accorder une permission")
-    print("7. retirer une permission")
-    print("8. exporter l'annuaire")
-    print("9. Se déconnecter")
+    print("6. Se déconnecter")
     choix = input("Choisir une action : ")
     if choix == "1":
         visualiser_annuaire(client)
@@ -211,12 +208,6 @@ def menu_actions(client: Client):
     elif choix == "5":
         rechercher_contact(client)
     elif choix == "6":
-        accorder_permission(client)
-    elif choix == "7":
-        retirer_permission(client)
-    elif choix == "8":
-        exporter_annuaire(client)
-    elif choix == "9":
         deconnecter_serveur()
         exit()
     else:
@@ -338,39 +329,6 @@ def lister_contacts(client: Client):
     visualiser_annuaire(client)
 
 
-def accorder_permission(client: Client):
-    """Accorde une permission à un autre utilisateur."""
-    email_utilisateur = input("Email de l'utilisateur à qui accorder la permission : ")
-    try:
-        client.accorder_permission(email_utilisateur)
-        print(f"Permission accordée à {email_utilisateur}.")
-    except Exception as e:
-        print(f"Erreur : {e}")
-    print()
-    menu_actions(client)
-
-
-def retirer_permission(client: Client):
-    """Retire une permission à un autre utilisateur."""
-    email_utilisateur = input("Email de l'utilisateur à qui retirer la permission : ")
-    try:
-        client.retirer_permission(email_utilisateur)
-        print(f"Permission retirée à {email_utilisateur}.")
-    except Exception as e:
-        print(f"Erreur : {e}")
-    print()
-    menu_actions(client)
-
-
-def exporter_annuaire(client: Client):
-    """Exporte l'annuaire au format CSV."""
-    try:
-        chemin = client.exporter_csv()
-        print(f"Annuaire exporté vers : {chemin}")
-    except Exception as e:
-        print(f"Erreur lors de l'export : {e}")
-    print()
-    menu_actions(client)
 
 
 def menu_actions_admin(admin: Administrateur):
@@ -382,45 +340,21 @@ def menu_actions_admin(admin: Administrateur):
     """
     print("--------------------------------")
     print("Menu Administrateur - Choisir une action :")
-    print("1. visualiser l'annuaire")
-    print("2. ajouter un contact")
-    print("3. supprimer un contact")
-    print("4. modifier un contact")
-    print("5. rechercher un contact")
-    print("6. accorder une permission")
-    print("7. retirer une permission")
-    print("8. exporter l'annuaire")
-    print("9. créer un utilisateur")
-    print("10. supprimer un utilisateur")
-    print("11. modifier un utilisateur")
-    print("12. lister les utilisateurs")
-    print("13. Se déconnecter")
+    print("1. créer un utilisateur")
+    print("2. supprimer un utilisateur")
+    print("3. modifier un utilisateur")
+    print("4. lister les utilisateurs")
+    print("5. Se déconnecter")
     choix = input("Choisir une action : ")
     if choix == "1":
-        visualiser_annuaire(admin)
-    elif choix == "2":
-        ajouter_contact(admin)
-    elif choix == "3":
-        supprimer_contact(admin)
-    elif choix == "4":
-        modifier_contact(admin)
-    elif choix == "5":
-        rechercher_contact(admin)
-    elif choix == "6":
-        accorder_permission(admin)
-    elif choix == "7":
-        retirer_permission(admin)
-    elif choix == "8":
-        exporter_annuaire(admin)
-    elif choix == "9":
         creer_utilisateur(admin)
-    elif choix == "10":
+    elif choix == "2":
         supprimer_utilisateur(admin)
-    elif choix == "11":
+    elif choix == "3":
         modifier_utilisateur(admin)
-    elif choix == "12":
+    elif choix == "4":
         lister_utilisateurs(admin)
-    elif choix == "13":
+    elif choix == "5":
         deconnecter_serveur()
         exit()
     else:

@@ -138,44 +138,4 @@ class Annuaire:
         """
         return self.contacts.copy()
     
-    def importer_csv(self, fichier: str):
-        """
-        Importe des contacts depuis un fichier CSV.
-        
-        Args:
-            fichier: Chemin vers le fichier CSV à importer
-        """
-        if not os.path.exists(fichier):
-            raise FileNotFoundError(f"Le fichier {fichier} n'existe pas")
-        
-        nouveaux_contacts = []
-        try:
-            with open(fichier, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    # Conversion de l'id_contact en int
-                    if row.get('id_contact'):
-                        row['id_contact'] = int(row['id_contact'])
-                    # Vérifier les champs obligatoires
-                    if all(k in row for k in ['id_contact', 'nom', 'prenom', 'email']):
-                        nouveaux_contacts.append(row)
-        except Exception as e:
-            raise Exception(f"Erreur lors de l'import CSV : {e}")
-        
-        # Ajouter les nouveaux contacts (en évitant les doublons d'ID)
-        ids_existants = {c['id_contact'] for c in self.contacts}
-        for contact in nouveaux_contacts:
-            if contact['id_contact'] not in ids_existants:
-                self.contacts.append(contact)
-                ids_existants.add(contact['id_contact'])
     
-    def exporter_csv(self) -> str:
-        """
-        Exporte l'annuaire au format CSV.
-        
-        Returns:
-            Chemin du fichier CSV exporté (identique à self.fichier_csv)
-        """
-        self.sauvegarder()
-        return self.fichier_csv
-

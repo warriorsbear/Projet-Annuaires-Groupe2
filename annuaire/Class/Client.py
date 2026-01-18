@@ -6,6 +6,9 @@ Aucune logique réseau intégrée : modélisation stricte des données et des op
 import hashlib
 import os
 import uuid
+import json
+import csv
+from pathlib import Path
 from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,8 +34,6 @@ class Client:
         self.hash_mot_de_passe = hash_mot_de_passe
         # Génération automatique du chemin d'annuaire basé sur l'identifiant unique
         self.chemin_annuaire = f"data/{self.identifiant}.csv"
-        self.permissions_accordees: List[str] = []  # Liste des identifiants ayant reçu des permissions
-        self.permissions_recues: List[str] = []  # Liste des identifiants ayant accordé des permissions
         self._annuaire: Optional[Annuaire] = None
     
     
@@ -110,44 +111,3 @@ class Client:
         annuaire = self._charger_annuaire()
         return annuaire.lister()
     
-    def accorder_permission(self, utilisateur: str):
-        """
-        Accorde une permission d'accès à un autre utilisateur.
-        
-        Args:
-            utilisateur: Identifiant de l'utilisateur auquel accorder la permission
-        """
-        if utilisateur not in self.permissions_accordees:
-            self.permissions_accordees.append(utilisateur)
-    
-    def retirer_permission(self, utilisateur: str):
-        """
-        Retire une permission d'accès à un autre utilisateur.
-        
-        Args:
-            utilisateur: Identifiant de l'utilisateur auquel retirer la permission
-        """
-        if utilisateur in self.permissions_accordees:
-            self.permissions_accordees.remove(utilisateur)
-    
-    def exporter_csv(self) -> str:
-        """
-        Exporte l'annuaire au format CSV.
-        
-        Returns:
-            Chemin du fichier CSV exporté
-        """
-        annuaire = self.charger_annuaire()
-        return annuaire.exporter_csv()
-    
-    def importer_csv(self, fichier: str):
-        """
-        Importe un annuaire depuis un fichier CSV.
-        
-        Args:
-            fichier: Chemin vers le fichier CSV à importer
-        """
-        annuaire = self.charger_annuaire()
-        annuaire.importer_csv(fichier)
-        annuaire.sauvegarder()
-

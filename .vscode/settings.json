@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./annuaire/programme",
+        "./annuaire/Class"
+    ]
+}

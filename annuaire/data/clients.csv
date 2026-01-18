@@ -3,3 +3,4 @@ id_client,email,hash_mdp,chemin_annuaire,liste_permissions_accordees,liste_permi
 f8a4b966-735b-4f28-9440-f82bc28659fc,admin@admin.fr,d82494f05d6917ba02f7aaa29689ccb444bb73f20380876cb05d1f37537b7892,data/f8a4b966-735b-4f28-9440-f82bc28659fc.csv,[],[]
 b7634b7b-0069-4dc7-bfc2-075b1420b9d4,romeo.test@gmail.com,f2d81a260dea8a100dd517984e53c56a7523d96942a834b9cdc249bd4e8c7aa9,data/b7634b7b-0069-4dc7-bfc2-075b1420b9d4.csv,[],[]
 379c7349-69f9-409b-9363-545d47454207,romeoandriantsiferana@gmail.com,c72ef034110f38100dda551c0fb1f2db7990854ef380f975629bc6e2f88ffa2a,data/379c7349-69f9-409b-9363-545d47454207.csv,[],[]
+60b55c88-df3e-49d6-b0e0-6fa5e6b78ee5,nicolas.ruiz@gmail.com,807a09440428c0a8aef58bd3ece32938b0d76e638119e47619756f5c2c20ff3a,data/60b55c88-df3e-49d6-b0e0-6fa5e6b78ee5.csv,[],[]
